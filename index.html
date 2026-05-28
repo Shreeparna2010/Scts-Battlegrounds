@@ -267,12 +267,12 @@ body{font-family:'Oswald',sans-serif;position:relative;}
 }
 </style>
 </head>
-<body>
+<body >
 
 <div id="title">
   <div class="title-stars" id="title-stars"></div>
-  <h1>🏫 SCTS Battlegrounds</h1>
-  <h2>STICKMAN EDITION</h2>
+  <h1 >🏫 SCTS Battlegrounds</h1>
+  <h2 >STICKMAN EDITION</h2>
 
   <div class="srow">
     <div class="scol">
@@ -436,10 +436,6 @@ const CHARS={
       heavy:{name:'Virus Bomb',dmg:24,spd:6.5,kb:10,cd:830,w:26,h:26,color:'#ff0077',special:'virus'},
       ranged:{name:'Lag Spike',dmg:15,spd:12,kb:5,stun:1500,cd:730,w:22,h:10,color:'#00eeff',text:'LAG!'},
       ult:{name:'SYSTEM CRASH',cd:14500}}},
-
-  /* ══════════════════════════════════
-     NEW CHARACTER 1: GOONER BOY
-     ══════════════════════════════════ */
   gooner:{name:'GOONER BOY',emoji:'🤤',color:'#ff6600',bodyColor:'#cc2200',
     hp:280,spd:3.8,dashSpd:16,dashDur:9,desc:'Sigma · Rizz Ray & Gooner Mode',
     moves:{
@@ -447,10 +443,6 @@ const CHARS={
       heavy:{name:'Gyatt Slam',dmg:28,range:112,kb:14,cd:820,color:'#ff4400',aoe:true},
       ranged:{name:'Rizz Ray',dmg:18,spd:9,kb:6,stun:800,cd:650,w:30,h:14,color:'#ff88ff',text:'RIZZ!'},
       ult:{name:'GOONER MODE',cd:13000}}},
-
-  /* ══════════════════════════════════
-     NEW CHARACTER 2: BHARGAV THE BALDY
-     ══════════════════════════════════ */
   bhargav:{name:'BHARGAV THE BALDY',emoji:'🦲',color:'#ffdd00',bodyColor:'#886600',
     hp:340,spd:2.9,dashSpd:13,dashDur:11,desc:'Tank · Dome Flash & Bald Fury',
     moves:{
@@ -458,25 +450,42 @@ const CHARS={
       heavy:{name:'Bald Bounce',dmg:30,range:120,kb:16,cd:900,color:'#ffffaa',aoe:true},
       ranged:{name:'Dome Flash',dmg:12,spd:10,kb:3,blind:true,stun:600,cd:700,w:32,h:32,color:'#ffffcc',text:'✨'},
       ult:{name:'BALD FURY',cd:14000}}},
-
-  /* ══════════════════════════════════
-     NEW CHARACTER 3: PRANEETH.K
-     Ult spawns Sharnesh + Abel as support
-     ══════════════════════════════════ */
   praneeth:{name:'PRANEETH.K',emoji:'🧠',color:'#aa44ff',bodyColor:'#550099',
     hp:260,spd:3.6,dashSpd:16,dashDur:9,desc:'Tactician · Summons Sharnesh & Abel',
     moves:{
       light:{name:'Quick Jab',dmg:12,range:78,kb:4,cd:340,color:'#aa88ff',aoe:false},
       heavy:{name:'Power Surge',dmg:22,range:105,kb:11,cd:780,color:'#7700ff',aoe:true},
       ranged:{name:'Mind Bolt',dmg:17,spd:9.5,kb:6,cd:620,w:24,h:24,color:'#cc88ff',text:'⚡'},
-      ult:{name:'SQUAD CALL',cd:16000}}}
+      ult:{name:'SQUAD CALL',cd:16000}}},
+
+  /* ══════════════════════════════════
+     NEW CHARACTER: ABDUL SIR (Maths)
+     ══════════════════════════════════ */
+  abdul:{name:'ABDUL SIR',emoji:'📏',color:'#33ccff',bodyColor:'#0055aa',
+    hp:450,spd:3.5,dashSpd:14,dashDur:10,desc:'Tanky Maths · Homing Crutches',
+    moves:{
+      light:{name:'Quick Calc',dmg:14,range:80,kb:6,cd:360,color:'#00ccff',aoe:false},
+      heavy:{name:'Formula Smash',dmg:28,range:110,kb:15,cd:800,color:'#0088ff',aoe:true},
+      ranged:{name:'PROOF!',dmg:18,spd:10,kb:7,cd:600,w:30,h:15,color:'#ffffff',text:'PROOF!'},
+      ult:{name:'CRUTCH MISSILES',cd:14000}}},
+
+  /* ══════════════════════════════════
+     NEW CHARACTER: RAKESH SIR (Physics)
+     ══════════════════════════════════ */
+  rakesh:{name:'RAKESH SIR',emoji:'⚛️',color:'#ffaa00',bodyColor:'#aa6600',
+    hp:280,spd:3.8,dashSpd:16,dashDur:9,desc:'Physics Power · Duster Spam',
+    moves:{
+      light:{name:'Force Punch',dmg:15,range:82,kb:6,cd:350,color:'#ffcc00',aoe:false},
+      heavy:{name:'Gravity Slam',dmg:26,range:115,kb:13,cd:760,color:'#ff8800',aoe:true},
+      ranged:{name:'BOY!',dmg:17,spd:11,kb:5,cd:550,w:30,h:15,color:'#ffdd00',text:'BOY!'},
+      ult:{name:'DUSTER STORM',cd:13000}}},
 };
 
 let gameMode='pvp',p1CK='malika',p2CK='varshitha';
 let running=false,started=false,rTimer=60;
 let animId,keys={};
 let parts=[],projs=[],efx=[],floats=[],puddles=[],herd=[],items=[],squad=[];
-let p1,p2,aiCd=0,shake={t:0,a:0},glitch=0;
+let p1,p2,aiState='idle',aiTimer=0,shake={t:0,a:0},glitch=0;
 
 function makeF(key,isP2){
   const c=CHARS[key];
@@ -487,7 +496,6 @@ function makeF(key,isP2){
     atkAnim:0,cds:{light:0,heavy:0,ranged:0,ult:0},
     combo:0,comboT:0,dead:false,phits:0,
     radius:24,invT:0,kDir:{x:0,y:0},kT:0,
-    // gooner-mode speed boost tracker
     spdBoost:false};
 }
 
@@ -616,21 +624,14 @@ function ult(f,opp){
     }
     doShake(28,45);
 
-  /* ═══════════════════════════════════
-     GOONER BOY ULT — GOONER MODE
-     8-direction Rizz barrage + speed boost
-     ═══════════════════════════════════ */
   }else if(f.key==='gooner'){
     ann('🤤 GOONER MODE ACTIVATED 🤤',2600);
     flash('#ff6600',0.5,300);
-    // Speed boost for 3 seconds
     const baseSpd=CHARS.gooner.spd;
     f.spd=baseSpd*2.4;
     f.spdBoost=true;
     setTimeout(()=>{if(!f.dead){f.spd=baseSpd;f.spdBoost=false;}},3000);
-    // Brief invincibility
     f.invT=50;
-    // Fire Rizz rays in 8 directions
     for(let i=0;i<8;i++){
       const a=(Math.PI*2/8)*i;
       projs.push({x:f.x,y:f.y,vx:Math.cos(a)*9.5,vy:Math.sin(a)*9.5,
@@ -638,22 +639,16 @@ function ult(f,opp){
         dmg:32,kb:10,stun:600,slow:false,blind:false,
         life:115,text:'RIZZ!',angle:a,gravity:false});
     }
-    // Big ring burst
     efx.push({type:'ring',x:f.x,y:f.y,r:0,maxR:220,color:'#ff88ff',life:32,maxLife:32});
     efx.push({type:'ring',x:f.x,y:f.y,r:0,maxR:140,color:'#ff6600',life:28,maxLife:28});
     sp(f.x,f.y,45,'#ff88ff',6);
     doShake(22,30);
 
-  /* ═══════════════════════════════════
-     BHARGAV THE BALDY ULT — BALD FURY
-     Shockwave pulse trio + blind + brief invuln
-     ═══════════════════════════════════ */
   }else if(f.key==='bhargav'){
     ann('🦲 BALD FURY!! 🦲',2600);
     flash('#ffffaa',0.85,350);
-    f.invT=90; // Bald head tanking
-    opp.blindT=1800; // Blinded by the shine
-    // 3 expanding shockwave rings that deal damage
+    f.invT=90; 
+    opp.blindT=1800;
     for(let i=0;i<3;i++){
       setTimeout(()=>{
         if(!f.dead){
@@ -666,14 +661,9 @@ function ult(f,opp){
         }
       },i*380);
     }
-    // Central dome explosion
     efx.push({type:'zone',x:f.x,y:f.y,r:0,maxR:180,color:'#ffff88',life:90,maxLife:90,owner:f});
     sp(f.x,f.y,60,'#ffffaa',8);
 
-  /* ═══════════════════════════════════
-     PRANEETH.K ULT — SQUAD CALL
-     Spawns SHARNESH (attacker) + ABEL (healer)
-     ═══════════════════════════════════ */
   }else if(f.key==='praneeth'){
     ann('⚡ SQUAD CALL! SHARNESH & ABEL ARRIVE! ⚡',3000);
     flash('#aa44ff',0.45,400);
@@ -682,7 +672,6 @@ function ult(f,opp){
     sp(f.x,f.y,40,'#aa44ff',6);
     doShake(18,25);
 
-    // Sharnesh — aggressive attacker orbiting fast, deals good damage
     squad.push({
       x:f.x-55,y:f.y-40,vx:0,vy:0,
       owner:f,name:'Sharnesh',
@@ -695,7 +684,6 @@ function ult(f,opp){
       healCd:0
     });
 
-    // Abel — support healer orbiting slower, heals Praneeth over time
     squad.push({
       x:f.x+55,y:f.y-40,vx:0,vy:0,
       owner:f,name:'Abel',
@@ -707,6 +695,41 @@ function ult(f,opp){
       type:'healer',
       healCd:60
     });
+  } else if (f.key === 'abdul') {
+    ann('📏 CRUTCH MISSILES! 📏', 2600);
+    flash('#33ccff', 0.6, 300);
+    for(let i=0; i<4; i++) {
+        setTimeout(() => {
+            if(!f.dead) {
+                const angle = Math.random() * Math.PI * 2;
+                projs.push({
+                    x: f.x, y: f.y, 
+                    vx: Math.cos(angle) * 5, vy: Math.sin(angle) * 5,
+                    w: 40, h: 10, color: '#ffffff', owner: f, 
+                    type: 'homing', dmg: 45, kb: 15, life: 200, text: '♿', angle: angle
+                });
+                sp(f.x, f.y, 10, '#33ccff', 4);
+            }
+        }, i * 400);
+    }
+  } else if (f.key === 'rakesh') {
+    ann('🧽 DUSTER STORM!! 🧽', 2600);
+    flash('#ffaa00', 0.6, 300);
+    for(let i=0; i<15; i++) {
+        setTimeout(() => {
+            if(!f.dead) {
+                const dx = opp.x - f.x, dy = opp.y - f.y, l = Math.hypot(dx, dy)||1;
+                const spread = (Math.random()-0.5)*0.5;
+                const angle = Math.atan2(dy, dx) + spread;
+                projs.push({
+                    x: f.x, y: f.y,
+                    vx: Math.cos(angle) * 12, vy: Math.sin(angle) * 12,
+                    w: 25, h: 25, color: '#ffaa00', owner: f, 
+                    type: 'normal', dmg: 20, kb: 8, life: 100, text: '🧽', angle: angle
+                });
+            }
+        }, i * 120);
+    }
   }
 }
 
@@ -765,32 +788,76 @@ function updF(f,opp,dt){
   efx.forEach(e=>{if(e.type==='zone'&&e.owner!==f&&Math.hypot(f.x-e.x,f.y-e.y)<e.r)f.slowT=Math.max(f.slowT,20);});
 }
 
-function runAI(ai,pl){
-  if(!started||ai.dead||ai.stunT>0)return;
-  aiCd--;if(aiCd>0)return;aiCd=12+Math.floor(Math.random()*18);
-  const dist=Math.hypot(ai.x-pl.x,ai.y-pl.y);
-  const ang=Math.atan2(pl.y-ai.y,pl.x-ai.x);
-  ai.vx+=Math.cos(ang)*3;ai.vy+=Math.sin(ang)*3;
-  const r=Math.random();
-  if(ai.meter>=100&&r<0.18){ult(ai,pl);return;}
-  if(dist>280){if(r<0.55)atk(ai,pl,'ranged');}
-  else if(dist>110){
-    if(r<0.3)atk(ai,pl,'ranged');
-    else if(r<0.5)dash(ai);
-    else if(r<0.65)atk(ai,pl,'heavy');
-  }else{
-    if(r<0.28)atk(ai,pl,'light');
-    else if(r<0.48)atk(ai,pl,'heavy');
-    else if(r<0.62)atk(ai,pl,'ranged');
-    else if(r<0.72)dash(ai);
-    else ai.blocking=r>0.88;
-  }
-  if(ai.hp<70&&Math.random()<0.25)dash(ai);
+/* ─────────────────────────────────────
+   NEW HARD AI SYSTEM (Tactical Brain)
+   ───────────────────────────────────── */
+function runAI(ai, pl) {
+    if(!started || ai.dead || ai.stunT > 0) return;
+
+    const dist = Math.hypot(ai.x - pl.x, ai.y - pl.y);
+    const ang = Math.atan2(pl.y - ai.y, pl.x - ai.x);
+
+    // 1. Reactive Blocking: Block if player is close and attacking
+    if (pl.atkAnim > 0 && dist < 100) {
+        ai.blocking = true;
+    } else {
+        ai.blocking = false;
+    }
+
+    // 2. Movement Logic
+    let mx = 0, my = 0;
+    if (dist > 150) {
+        // Close the gap
+        mx = Math.cos(ang);
+        my = Math.sin(ang);
+    } else if (dist < 60) {
+        // Back off slightly to keep space
+        mx = -Math.cos(ang);
+        my = -Math.sin(ang);
+    }
+
+    // Directly modify velocity for snappier movement
+    ai.vx += mx * 0.5;
+    ai.vy += my * 0.5;
+
+    // 3. Attack Decision State Machine
+    aiTimer--;
+    if (aiTimer <= 0) {
+        aiTimer = 20 + Math.random() * 30;
+
+        if (ai.meter >= 100 && Math.random() < 0.3) {
+            ult(ai, pl);
+        } else if (dist < 85) {
+            // Melee Combo: Light -> Light -> Heavy
+            const r = Math.random();
+            if (r < 0.6) atk(ai, pl, 'light');
+            else atk(ai, pl, 'heavy');
+        } else if (dist < 300) {
+            // Ranged Pressure
+            if (Math.random() < 0.7) atk(ai, pl, 'ranged');
+            else dash(ai);
+        }
+    }
 }
 
 function updP(dt){
   for(let i=projs.length-1;i>=0;i--){
-    const p=projs[i];p.x+=p.vx*dt;p.y+=p.vy*dt;
+    const p=projs[i];
+    
+    // Homing Logic
+    if(p.type === 'homing') {
+        const tgt = p.owner === p1 ? p2 : p1;
+        if(tgt && !tgt.dead) {
+            const dx = tgt.x - p.x, dy = tgt.y - p.y, l = Math.hypot(dx, dy)||1;
+            const targetAngle = Math.atan2(dy, dx);
+            p.vx += Math.cos(targetAngle) * 0.4 * dt;
+            p.vy += Math.sin(targetAngle) * 0.4 * dt;
+            const spd = Math.hypot(p.vx, p.vy);
+            if(spd > 12) { p.vx = (p.vx/spd)*12; p.vy = (p.vy/spd)*12; }
+        }
+    }
+
+    p.x+=p.vx*dt;p.y+=p.vy*dt;
     if(p.gravity)p.vy+=0.3*dt;p.life--;
     const tgt=p.owner===p1?p2:p1;
     if(tgt&&!tgt.dead&&Math.hypot(p.x-tgt.x,p.y-tgt.y)<tgt.radius+Math.max(p.w,p.h)/2){
@@ -832,15 +899,10 @@ function updH(dt){
   }
 }
 
-/* ─────────────────────────────────────
-   SQUAD UPDATE — Praneeth.k's support team
-   Sharnesh orbits + attacks, Abel orbits + heals
-   ───────────────────────────────────── */
 function updSquad(dt){
   for(let i=squad.length-1;i>=0;i--){
     const s=squad[i];
     if(s.owner.dead){squad.splice(i,1);continue;}
-    // Orbit owner smoothly
     s.orbitAngle+=s.orbitSpeed*dt;
     const tx=s.owner.x+Math.cos(s.orbitAngle)*s.orbitRadius;
     const ty=s.owner.y+Math.sin(s.orbitAngle)*s.orbitRadius;
@@ -848,7 +910,6 @@ function updSquad(dt){
     s.y+=(ty-s.y)*0.12*dt;
     s.life--;
     const tgt=s.owner===p1?p2:p1;
-    // Attack enemy if in range
     if(s.hitCd>0)s.hitCd--;
     if(tgt&&!tgt.dead&&s.hitCd<=0&&Math.hypot(s.x-tgt.x,s.y-tgt.y)<90){
       hit(s.owner,tgt,s.dmg,5,0);
@@ -856,7 +917,6 @@ function updSquad(dt){
       efx.push({type:'slash',x:tgt.x,y:tgt.y,angle:Math.atan2(tgt.y-s.y,tgt.x-s.x),life:10,maxLife:10,color:s.color});
       s.hitCd=s.type==='attacker'?42:72;
     }
-    // Healer: periodically restore owner HP
     if(s.type==='healer'){
       if(s.healCd>0)s.healCd--;
       if(s.healCd<=0){
@@ -867,7 +927,6 @@ function updSquad(dt){
         s.healCd=95;
       }
     }
-    // Attacker: emit faint trail particles
     if(s.type==='attacker'&&Math.random()<0.3)sp(s.x,s.y,1,s.color,1.8);
     if(s.life<=0)squad.splice(i,1);
   }
@@ -985,7 +1044,6 @@ function draw(){
     if(Math.random()<0.35)sp(r.x,r.y,1,r.color,2);
   });
 
-  /* ─── Draw SQUAD MEMBERS (Sharnesh & Abel) ─── */
   squad.forEach(s=>{
     const lifeRatio=s.life/s.maxLife;
     const a=Math.min(1,lifeRatio*3);
@@ -993,35 +1051,27 @@ function draw(){
     ctx.save();
     ctx.translate(s.x,s.y);
 
-    // Glow aura
     ctx.shadowColor=s.color;ctx.shadowBlur=18;
     const grad=ctx.createRadialGradient(0,0,0,0,0,22);
     grad.addColorStop(0,h2r(s.color,0.2));
     grad.addColorStop(1,'rgba(0,0,0,0)');
     ctx.fillStyle=grad;ctx.beginPath();ctx.arc(0,0,22,0,Math.PI*2);ctx.fill();
 
-    // Mini stickman body
     ctx.strokeStyle=s.color;ctx.lineWidth=3;ctx.lineCap='round';
-    // Head
     ctx.beginPath();ctx.arc(0,-11,7,0,Math.PI*2);
     ctx.fillStyle=s.type==='attacker'?'#004433':'#443300';
     ctx.fill();ctx.stroke();
-    // Torso
     ctx.beginPath();ctx.moveTo(0,-4);ctx.lineTo(0,7);ctx.stroke();
-    // Legs
     const lp=Date.now()*0.018;
     ctx.beginPath();ctx.moveTo(0,7);ctx.lineTo(Math.sin(lp)*7,17);ctx.stroke();
     ctx.beginPath();ctx.moveTo(0,7);ctx.lineTo(Math.sin(lp+Math.PI)*7,17);ctx.stroke();
-    // Arms
     ctx.beginPath();ctx.moveTo(0,-1);ctx.lineTo(10,4);ctx.stroke();
     ctx.beginPath();ctx.moveTo(0,-1);ctx.lineTo(-10,4);ctx.stroke();
 
-    // Icon badge
     ctx.shadowBlur=0;
     ctx.font='12px Arial';ctx.textAlign='center';
     ctx.fillText(s.type==='attacker'?'⚔️':'💊',0,27);
 
-    // Name label with background pill
     const nm=s.name;
     ctx.font='bold 9px Oswald';
     const tw=ctx.measureText(nm).width+8;
@@ -1033,7 +1083,6 @@ function draw(){
     ctx.fillStyle=s.color;
     ctx.fillText(nm,0,-20);
 
-    // HP bar (based on remaining life)
     const bw=36,bh=3;
     ctx.fillStyle='rgba(0,0,0,0.5)';
     ctx.fillRect(-bw/2,32,bw,bh);
@@ -1098,14 +1147,12 @@ function drawF(f){
     ctx.strokeStyle='rgba(150,200,255,0.75)';ctx.lineWidth=2.5;ctx.stroke();
   }
 
-  // Gooner Mode speed boost aura
   if(f.key==='gooner'&&f.spdBoost){
     ctx.shadowColor='#ff88ff';ctx.shadowBlur=30;
     ctx.beginPath();ctx.arc(0,0,r+16,0,Math.PI*2);
     ctx.strokeStyle='rgba(255,136,255,0.6)';ctx.lineWidth=3;ctx.stroke();
     ctx.shadowBlur=0;
   }
-  // Bhargav bald shine effect
   if(f.key==='bhargav'&&f.meter>=100){
     ctx.shadowColor='#ffff00';ctx.shadowBlur=35;
   } else if(f.meter>=100){
@@ -1117,14 +1164,11 @@ function drawF(f){
   let walkPhase=isMoving?Date.now()*0.015:0;
   let faceR=Math.cos(f.facing)>=0?1:-1;
 
-  // Draw head — special for bhargav (shiny/bald)
   if(f.key==='bhargav'){
     ctx.beginPath();ctx.arc(0,-18,13,0,Math.PI*2);
-    // Shiny gradient for bald head
     const bGrad=ctx.createRadialGradient(-4,-22,1,-4,-22,13);
     bGrad.addColorStop(0,'#ffffee');bGrad.addColorStop(0.4,f.bodyColor);bGrad.addColorStop(1,'#554400');
     ctx.fillStyle=bGrad;ctx.fill();ctx.stroke();
-    // Shine spot
     ctx.beginPath();ctx.arc(-4,-23,3.5,0,Math.PI*2);
     ctx.fillStyle='rgba(255,255,220,0.8)';ctx.fill();
   }else{
@@ -1133,8 +1177,22 @@ function drawF(f){
 
   ctx.beginPath();ctx.moveTo(0,-6);ctx.lineTo(0,12);ctx.stroke();
   let leg1=Math.sin(walkPhase)*12,leg2=Math.sin(walkPhase+Math.PI)*12;
-  ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(leg1,26);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(leg2,26);ctx.stroke();
+  
+  // Abdul's injured leg and crutches
+  if(f.key === 'abdul') {
+    ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(leg1,26);ctx.stroke(); // Normal leg
+    ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(2,18);ctx.stroke(); // Injured leg (short)
+    
+    // Crutches
+    ctx.strokeStyle = '#ddd'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(-8, 12); ctx.lineTo(-15, 28); ctx.stroke(); // Left crutch
+    ctx.beginPath(); ctx.moveTo(8, 12); ctx.lineTo(15, 28); ctx.stroke(); // Right crutch
+    ctx.strokeStyle = f.color; ctx.lineWidth = 5;
+  } else {
+    ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(leg1,26);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,12);ctx.lineTo(leg2,26);ctx.stroke();
+  }
+
   let arm1X=faceR*10,arm1Y=0,arm2X=-faceR*10,arm2Y=6;
   if(f.atkAnim>0){arm1X=faceR*22;arm1Y=-12;arm2X=-faceR*5;arm2Y=0;}
   ctx.beginPath();ctx.moveTo(0,-2);ctx.lineTo(arm1X,arm1Y);ctx.stroke();
@@ -1150,7 +1208,6 @@ function drawF(f){
     const t2=Date.now()/210;
     for(let i=0;i<3;i++){const a=t2+i*Math.PI*2/3;ctx.font='13px Arial';ctx.fillText('⭐',Math.cos(a)*28-6,Math.sin(a)*12-r-12);}
   }
-  // Squad indicator for Praneeth when squad is active
   if(f.key==='praneeth'&&squad.some(s=>s.owner===f)){
     ctx.font='11px Arial';ctx.textAlign='center';
     ctx.fillText('👥',0,-r-36);
@@ -1333,9 +1390,6 @@ function startGame(){
 buildCards();
 animId=requestAnimationFrame(loop);
 
-/* ═══════════════════════════════════════
-   MOBILE TOUCH CONTROLS
-   ═══════════════════════════════════════ */
 const jZone=document.getElementById('j-zone');
 const jStick=document.getElementById('j-stick');
 let jActive=false,jBaseX=0,jBaseY=0,jTouchId=null;
